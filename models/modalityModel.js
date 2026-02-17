@@ -9,7 +9,7 @@ const Modality = sequelize.define("modality", {
         primaryKey: true
     },
     name: {
-        type: DataTypes.ENUM("On-site", "Remote", "Hybrid"),
+        type: DataTypes.ENUM("Presencial", "Remoto", "Híbrido"),
         allowNull: false
     },
 });

@@ -2,7 +2,7 @@ const User = require("../models/userModel");
 const RefreshToken = require("../models/refreshTokensModel");
 
 const { comparePassword, hashPassword } = require("./hash.service");
-const { generateToken, generateRefreshToken, verifyToken } = require("./token.service");
+const { generateToken, generateRefreshToken, verifyToken, verifyRefreshToken } = require("./token.service");
 
 exports.register = async (user) => {
     const { name, email, password } = user;
@@ -20,7 +20,7 @@ exports.login = async (credentials) => {
             return {
                 ok: false,
                 code: "USER_NOT_FOUND",
-                message: "User not found"
+                message: "Usuario no encontrado"
             }
         }
         const isPasswordValid = comparePassword(password, user.password);
@@ -28,18 +28,17 @@ exports.login = async (credentials) => {
             return {
                 ok: false,
                 code: "INVALID_CREDENTIALS",
-                message: "Email or password is incorrect"
+                message: "Email o contraseña incorrectos"
             }
         }
         const token = generateToken(user);
         const refreshToken = generateRefreshToken(user);
-        await RefreshToken.create({ token: refreshToken, userId: user.id });
+        await RefreshToken.create({ token: refreshToken, userId: user.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
         return {
             ok: true,
             code: "SUCCESS",
             message: "User logged in successfully",
             token,
-            refreshToken
         };
     } catch (error) {
         return {
@@ -73,13 +72,14 @@ exports.signup = async (credentials) => {
         const newUser = await User.create({ name, lastName, email, password: hashedPassword });
         const token = generateToken(newUser);
         const refreshToken = generateRefreshToken(newUser);
-        await RefreshToken.create({ token: refreshToken, userId: newUser.id });
+        console.log("Refresh token", refreshToken);
+        await RefreshToken.create({ token: refreshToken, userId: newUser.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+        console.log("Refresh token created");
         return {
             ok: true,
             code: "SUCCESS",
             message: "User signed up successfully",
             token,
-            refreshToken
         };
     } catch (error) {
         return {
@@ -90,10 +90,10 @@ exports.signup = async (credentials) => {
     }
 };
 
-exports.logout = async (refreshToken) => {
+exports.logout = async (userId) => {
     try {
         console.log("Logout service")
-        await RefreshToken.destroy({ where: { token: refreshToken } });
+        await RefreshToken.destroy({ where: { userId: userId } });
         return {
             ok: true,
             code: "SUCCESS",
@@ -133,9 +133,9 @@ exports.refresh = async (refreshToken) => {
                 message: "Refresh token expired"
             }
         }
-        const payload = verifyToken(refreshToken);
+        const payload = verifyRefreshToken(refreshToken);
 
-        const user = await User.findOne({ where: { id: payload.userId } });
+        const user = await User.findOne({ where: { id: payload.id } });
         if (!user) {
             return {
                 ok: false,

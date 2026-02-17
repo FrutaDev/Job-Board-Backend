@@ -1,4 +1,5 @@
 const express = require("express");
+require("dotenv").config();
 
 const sequelize = require("./src/utils/database");
 const cors = require("cors");
@@ -12,13 +13,23 @@ const Modality = require("./models/modalityModel");
 const PostulatedWork = require("./models/postulatedWorksModel");
 
 const authRoutes = require("./routes/auth");
+const jobsRoutes = require("./routes/jobs");
+const { setUserId } = require("./middlewares/setUserId");
+const { seedModalities } = require("./models/seeds/seedModalities");
+const { seedTypeOfJob } = require("./models/seeds/seedTypeOfJob");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
 app.use("/auth", authRoutes);
+
+app.use(setUserId);
+
+app.use("/jobs", jobsRoutes);
 
 app.get("/", (req, res) => {
     res.status(201).json({ message: "Hello World!" });
@@ -47,6 +58,8 @@ Job.belongsTo(Modality, { foreignKey: "modalityId" });
 
 Company.hasMany(Job, { foreignKey: "companyId" });
 Job.belongsTo(Company, { foreignKey: "companyId" });
+Job.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(Job, { foreignKey: "userId" })
 
 PostulatedWork.belongsTo(User, { foreignKey: "userId" });
 User.hasMany(PostulatedWork, { foreignKey: "userId" });
@@ -56,8 +69,10 @@ Job.hasMany(PostulatedWork, { foreignKey: "jobId" });
 
 sequelize
     .sync()
-    .then(() => {
+    .then(async () => {
         console.log("Database synchronized");
+        await seedModalities();
+        await seedTypeOfJob();
         app.listen(3000, () => {
             console.log("Server is running on address http://127.0.0.1:3000/");
         });

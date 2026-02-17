@@ -12,19 +12,19 @@ const Job = sequelize.define("job", {
         type: DataTypes.STRING,
         allowNull: false
     },
-    description: {
-        type: DataTypes.TEXT,
+    companyId: {
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     location: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    salary: {
+    salary_min: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    typeOfJobId: {
+    salary_max: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -32,7 +32,48 @@ const Job = sequelize.define("job", {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    companyId: {
+    typeOfJobId: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    description_html: {
+        type: DataTypes.TEXT("long"),
+        allowNull: false
+    },
+    responsabilities_html: {
+        type: DataTypes.TEXT("long"),
+        allowNull: false
+    },
+    requirements_html: {
+        type: DataTypes.TEXT("long"),
+        allowNull: false
+    },
+    benefits_html: {
+        type: DataTypes.TEXT("long"),
+        allowNull: false
+    },
+    description_text: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    responsabilities_text: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    requirements_text: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    benefits_text: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    isApproved: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    userId: {
         type: DataTypes.INTEGER,
         allowNull: false
     }

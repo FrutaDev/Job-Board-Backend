@@ -9,7 +9,7 @@ const TypeOfJob = sequelize.define("typeOfJob", {
         primaryKey: true
     },
     name: {
-        type: DataTypes.ENUM("Full-time", "Part-time", "Internship"),
+        type: DataTypes.ENUM("Tiempo completo", "Medio tiempo", "Prácticas", "Servicio social"),
         allowNull: false
     },
 });

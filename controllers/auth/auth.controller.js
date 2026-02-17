@@ -1,4 +1,4 @@
-const { register, login, logout, refresh } = require("../../auth/auth.service");
+const { signup, login, logout, refresh } = require("../../auth/auth.service");
 const User = require("../../models/userModel");
 const RefreshToken = require("../../models/refreshTokensModel");
 const { generateToken, generateRefreshToken, verifyToken } = require("../../auth/token.service");
@@ -12,7 +12,7 @@ exports.loginController = async (req, res) => {
             return res.status(400).json({
                 ok: false,
                 code: "BAD_REQUEST",
-                message: "Email and password are required"
+                message: "Email y contraseña son obligatorios"
             });
         }
         const result = await login({ email, password });
