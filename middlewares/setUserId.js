@@ -1,22 +1,17 @@
 const { extractUserId } = require("../auth/token.service");
 
 exports.setUserId = (req, res, next) => {
-    if (!req.headers.authorization) {
-        return res.status(401).json({
-            ok: false,
-            code: "UNAUTHORIZED",
-            message: "No se proporcionó un token de autenticación."
-        });
+    console.log("🚀🚀🚀 Entrando a set user id middleware")
+    console.log(req.cookies.refreshToken)
+    if (!req.cookies.refreshToken) {
+        req.userId = null;
+        return next();
     }
 
-    req.userId = extractUserId(req.headers.authorization.split(" ")[1]);
-
-    if (!req.userId) {
-        return res.status(401).json({
-            ok: false,
-            code: "UNAUTHORIZED",
-            message: "No se proporcionó un token de autenticación válido."
-        });
+    try {
+        req.userId = extractUserId(req.cookies.refreshToken);
+    } catch (error) {
+        req.userId = null;
     }
 
     next();

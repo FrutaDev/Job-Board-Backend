@@ -6,6 +6,7 @@ const { hashPassword } = require("../../auth/hash.service");
 require("dotenv").config();
 
 exports.loginController = async (req, res) => {
+    console.log("🚀🚀🚀 Entrando a login controller")
     try {
         const { email, password } = req.body;
         if (!email || !password) {
@@ -19,7 +20,19 @@ exports.loginController = async (req, res) => {
         if (!result.ok) {
             return res.status(401).json(result);
         }
-        return res.status(200).json(result);
+        return res.status(200)
+            .cookie("refreshToken", result.refreshToken, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                maxAge: 24 * 60 * 60 * 1000
+            })
+            .json({
+                ok: true,
+                code: "SUCCESS",
+                message: "User logged in successfully",
+                token: result.token,
+            });
     } catch (error) {
         console.error("Error logging in:", error);
         return res.status(500).json({
@@ -44,7 +57,21 @@ exports.signupController = async (req, res) => {
         if (!result.ok) {
             return res.status(401).json(result);
         }
-        return res.status(200).json(result);
+        return res.status(200)
+            .cookie(
+                "refreshToken", result.refreshToken, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                maxAge: 24 * 60 * 60 * 1000
+            }
+            )
+            .json({
+                ok: true,
+                code: "SUCCESS",
+                message: "User signed up successfully",
+                token: result.token,
+            });
     } catch (error) {
         console.error("Error signing up:", error);
         return res.status(500).json({
@@ -57,7 +84,7 @@ exports.signupController = async (req, res) => {
 
 exports.logoutController = async (req, res) => {
     try {
-        const { refreshToken } = req.body;
+        const refreshToken = req.cookies.refreshToken;
         if (!refreshToken) {
             return res.status(400).json({
                 ok: false,
@@ -69,7 +96,13 @@ exports.logoutController = async (req, res) => {
         if (!result.ok) {
             return res.status(401).json(result);
         }
-        return res.status(200).json(result);
+        return res.status(200)
+            .clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+            })
+            .json(result);
     } catch (error) {
         console.error("Error logging out:", error);
         return res.status(500).json({
@@ -82,7 +115,7 @@ exports.logoutController = async (req, res) => {
 
 exports.refreshController = async (req, res) => {
     try {
-        const { refreshToken } = req.body;
+        const refreshToken = req.cookies.refreshToken;
         if (!refreshToken) {
             return res.status(400).json({
                 ok: false,

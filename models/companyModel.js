@@ -53,9 +53,9 @@ const Company = sequelize.define("company", {
         allowNull: false
     },
     isApproved: {
-        type: DataTypes.BOOLEAN,
+        type: DataTypes.ENUM("pending", "approved", "rejected"),
         allowNull: false,
-        defaultValue: false
+        defaultValue: "pending"
     },
     userId: {
         type: DataTypes.INTEGER,

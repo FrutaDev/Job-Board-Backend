@@ -8,9 +8,9 @@ exports.generateToken = (user) => {
         role: user.role
     },
         process.env.JWT_SECRET, {
-        expiresIn: "24h",
+        expiresIn: "1h",
     });
-    console.log(`[JWT] Token generated for user ${user.id} at ${new Date().toISOString()}. Expires in 24h.`);
+    console.log(`[JWT] Token generated for user ${user.id} at ${new Date().toISOString()}. Expires in 1h.`);
     return token;
 };
 
@@ -33,7 +33,7 @@ exports.verifyRefreshToken = (token) => {
 
 exports.extractUserId = (token) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.REFRESH_JWT_SECRET);
         return decoded.id;
     } catch (e) {
         console.error(`[JWT] extractUserId failed at ${new Date().toISOString()}:`, e.message);

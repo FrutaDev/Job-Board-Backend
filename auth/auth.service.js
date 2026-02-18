@@ -1,5 +1,7 @@
 const User = require("../models/userModel");
 const RefreshToken = require("../models/refreshTokensModel");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 const { comparePassword, hashPassword } = require("./hash.service");
 const { generateToken, generateRefreshToken, verifyToken, verifyRefreshToken } = require("./token.service");
@@ -39,6 +41,7 @@ exports.login = async (credentials) => {
             code: "SUCCESS",
             message: "User logged in successfully",
             token,
+            refreshToken
         };
     } catch (error) {
         return {
@@ -80,6 +83,7 @@ exports.signup = async (credentials) => {
             code: "SUCCESS",
             message: "User signed up successfully",
             token,
+            refreshToken
         };
     } catch (error) {
         return {
@@ -90,10 +94,10 @@ exports.signup = async (credentials) => {
     }
 };
 
-exports.logout = async (userId) => {
+exports.logout = async (refreshToken) => {
     try {
-        console.log("Logout service")
-        await RefreshToken.destroy({ where: { userId: userId } });
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_JWT_SECRET);
+        await RefreshToken.destroy({ where: { userId: decoded.id } });
         return {
             ok: true,
             code: "SUCCESS",
@@ -110,7 +114,6 @@ exports.logout = async (userId) => {
 
 exports.refresh = async (refreshToken) => {
     try {
-        console.log("Refresh service")
         if (!refreshToken) {
             return {
                 ok: false,
@@ -118,7 +121,8 @@ exports.refresh = async (refreshToken) => {
                 message: "Refresh token not found"
             }
         }
-        const refreshTokenDB = await RefreshToken.findOne({ where: { token: refreshToken } });
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_JWT_SECRET);
+        const refreshTokenDB = await RefreshToken.findOne({ where: { userId: decoded.id } });
         if (!refreshTokenDB) {
             return {
                 ok: false,

@@ -4,7 +4,6 @@ const TypeOfJob = require("../../models/typeOfJobModel.js");
 
 const genericLocalRFC = "XAXX010101000";
 const genericForeignRFC = "XEXX010101000";
-const { extractUserId } = require("../../auth/token.service");
 
 exports.createCompanyController = async (req, res) => {
     try {
@@ -58,9 +57,11 @@ exports.createCompanyController = async (req, res) => {
 
 exports.getCompaniesController = async (req, res) => {
     try {
-        const companies = await Company.findAll({ where: { userId: req.userId, isApproved: true }, attributes: ['id', 'name'] });
-        const modalities = await Modality.findAll({ attributes: ['id', 'name'] });
-        const typeOfJobs = await TypeOfJob.findAll({ attributes: ['id', 'name'] });
+        const [companies, modalities, typeOfJobs] = await Promise.all([
+            Company.findAll({ where: { userId: req.userId, isApproved: "approved" }, attributes: ['id', 'name'] }),
+            Modality.findAll({ attributes: ['id', 'name'] }),
+            TypeOfJob.findAll({ attributes: ['id', 'name'] })
+        ]);
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
