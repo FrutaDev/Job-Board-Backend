@@ -105,6 +105,9 @@ exports.getJobsForRequestsPage = async (req, res) => {
                     model: Company,
                     attributes: ["name"]
                 }
+            ],
+            order: [
+                ["createdAt", "DESC"]
             ]
         });
         res.status(200).json({

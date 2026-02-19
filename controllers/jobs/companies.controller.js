@@ -6,9 +6,21 @@ const genericLocalRFC = "XAXX010101000";
 const genericForeignRFC = "XEXX010101000";
 
 exports.createCompanyController = async (req, res) => {
+    console.log("Entrando al controlador de createCompanyController")
     try {
         const { name, rfc, country, state, city, zipCode, street, streetNumber, email, phone } = req.body;
+        console.log("req.body", req.body);
         const logo = req.file;
+        console.log("req.file", req.file);
+        if (!logo) {
+            console.error("No alcancé el logo");
+            return res.status(400).json({
+                ok: false,
+                code: "BAD_REQUEST",
+                message: "Logo faltante"
+            });
+        }
+        console.log("logo", logo);
         if (!name || !rfc || !country || !state || !city || !zipCode || !street || !streetNumber || !email || !phone) {
             return res.status(400).json({
                 ok: false,
@@ -29,7 +41,7 @@ exports.createCompanyController = async (req, res) => {
         await Company.create({
             name: name,
             rfc: rfc,
-            logo: logo,
+            logo: logo.path,
             country: country,
             state: state,
             city: city,
@@ -76,6 +88,33 @@ exports.getCompaniesController = async (req, res) => {
             ok: false,
             code: "SERVER_ERROR",
             message: "Error al obtener las solicitudes de alta"
+        });
+    }
+};
+
+exports.getCompaniesForRequestsPage = async (req, res) => {
+    try {
+        const companies = await Company.findAll({
+            where: {
+                userId: req.userId
+            },
+            attributes: ["id", "name", "isApproved", "contact_email", "contact_phone", "logo", "createdAt"],
+            order: [
+                ["createdAt", "DESC"]
+            ]
+        });
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Companies fetched successfully",
+            companies: companies
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
         });
     }
 };

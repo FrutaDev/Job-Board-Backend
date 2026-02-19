@@ -36,10 +36,11 @@ app.use(cookieParser());
 
 app.use("/auth", authRoutes);
 
-
 app.use(setUserId);
 
 app.use("/jobs", jobsRoutes);
+
+app.use('/uploads', express.static('uploads'));
 
 app.get("/", (req, res) => {
     res.status(201).json({ message: "Hello World!" });
