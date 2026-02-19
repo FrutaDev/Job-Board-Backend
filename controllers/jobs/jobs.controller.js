@@ -84,3 +84,41 @@ exports.getAllJobsController = async (req, res) => {
         });
     }
 };
+
+exports.getJobsForRequestsPage = async (req, res) => {
+    try {
+        const jobs = await Job.findAll({
+            where: {
+                userId: req.userId
+            },
+            attributes: ["id", "title", "location", "salary_min", "salary_max", "isApproved", "createdAt"],
+            include: [
+                {
+                    model: Modality,
+                    attributes: ["name"]
+                },
+                {
+                    model: TypeOfJob,
+                    attributes: ["name"]
+                },
+                {
+                    model: Company,
+                    attributes: ["name"]
+                }
+            ]
+        });
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Jobs fetched successfully",
+            jobs: jobs
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};

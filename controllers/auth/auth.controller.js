@@ -6,7 +6,6 @@ const { hashPassword } = require("../../auth/hash.service");
 require("dotenv").config();
 
 exports.loginController = async (req, res) => {
-    console.log("🚀🚀🚀 Entrando a login controller")
     try {
         const { email, password } = req.body;
         if (!email || !password) {
