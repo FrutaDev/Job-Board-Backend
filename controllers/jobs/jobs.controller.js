@@ -49,7 +49,11 @@ exports.createJobController = async (req, res) => {
 
 exports.getAllJobsController = async (req, res) => {
     try {
-        const jobs = await Job.findAll({
+        const { page = 1, limit = 20 } = req.query
+        const parsedPage = Math.max(1, parseInt(page), 1);
+        const parsedLimit = Math.max(1, parseInt(limit), 20);
+        const offset = (parsedPage - 1) * parsedLimit;
+        const { rows, count } = await Job.findAndCountAll({
             where: {
                 isApproved: "approved"
             },
@@ -67,13 +71,19 @@ exports.getAllJobsController = async (req, res) => {
                     model: Company,
                     attributes: ["name"]
                 }
-            ]
+            ],
+            limit: parsedLimit,
+            offset: offset
         });
+        console.log("rooows", rows)
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
             message: "Jobs fetched successfully",
-            jobs: jobs
+            jobs: rows,
+            count: count,
+            page: parsedPage,
+            limit: parsedLimit
         });
     } catch (e) {
         console.error(e);
@@ -115,6 +125,45 @@ exports.getJobsForRequestsPage = async (req, res) => {
             code: "SUCCESS",
             message: "Jobs fetched successfully",
             jobs: jobs
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.getJobByIdController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const job = await Job.findOne({
+            where: {
+                id: id
+            },
+            attributes: ["id", "title", "location", "salary_min", "salary_max", "description_html", "responsabilities_html", "requirements_html", "benefits_html"],
+            include: [
+                {
+                    model: Modality,
+                    attributes: ["name"]
+                },
+                {
+                    model: TypeOfJob,
+                    attributes: ["name"]
+                },
+                {
+                    model: Company,
+                    attributes: ["name"]
+                }
+            ]
+        });
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Job fetched successfully",
+            job: job
         });
     } catch (e) {
         console.error(e);

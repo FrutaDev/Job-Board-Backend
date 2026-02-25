@@ -73,6 +73,11 @@ const Job = sequelize.define("job", {
         allowNull: false,
         defaultValue: "pending"
     },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+    },
     userId: {
         type: DataTypes.INTEGER,
         allowNull: false

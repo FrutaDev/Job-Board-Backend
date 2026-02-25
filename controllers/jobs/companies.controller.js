@@ -1,6 +1,7 @@
 const Company = require("../../models/companyModel.js");
 const Modality = require("../../models/modalityModel.js");
 const TypeOfJob = require("../../models/typeOfJobModel.js");
+const fs = require("fs");
 
 const genericLocalRFC = "XAXX010101000";
 const genericForeignRFC = "XEXX010101000";
@@ -8,20 +9,10 @@ const genericForeignRFC = "XEXX010101000";
 exports.createCompanyController = async (req, res) => {
     console.log("Entrando al controlador de createCompanyController")
     try {
-        const { name, rfc, country, state, city, zipCode, street, streetNumber, email, phone } = req.body;
-        console.log("req.body", req.body);
+        const { name, rfc, country, state, city, zipCode, street, streetNumber, email, phone, description } = req.body;
         const logo = req.file;
-        console.log("req.file", req.file);
-        if (!logo) {
-            console.error("No alcancé el logo");
-            return res.status(400).json({
-                ok: false,
-                code: "BAD_REQUEST",
-                message: "Logo faltante"
-            });
-        }
-        console.log("logo", logo);
-        if (!name || !rfc || !country || !state || !city || !zipCode || !street || !streetNumber || !email || !phone) {
+
+        if (!name || !rfc || !country || !state || !city || !zipCode || !street || !streetNumber || !email || !phone || !description) {
             return res.status(400).json({
                 ok: false,
                 code: "BAD_REQUEST",
@@ -50,7 +41,8 @@ exports.createCompanyController = async (req, res) => {
             street_number: streetNumber,
             contact_email: email,
             contact_phone: phone,
-            userId: req.userId
+            userId: req.userId,
+            description: description
         });
         res.status(201).json({
             ok: true,
@@ -59,6 +51,9 @@ exports.createCompanyController = async (req, res) => {
         });
     } catch (e) {
         console.error(e);
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
         res.status(500).json({
             ok: false,
             code: "SERVER_ERROR",
@@ -108,6 +103,42 @@ exports.getCompaniesForRequestsPage = async (req, res) => {
             code: "SUCCESS",
             message: "Companies fetched successfully",
             companies: companies
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.getCompaniesForMainPageController = async (req, res) => {
+    try {
+        const { page = 1, limit = 20 } = req.query
+        const parsedPage = Math.max(1, parseInt(page), 1);
+        const parsedLimit = Math.max(1, parseInt(limit), 20);
+        const offset = (parsedPage - 1) * parsedLimit;
+        const { rows, count } = await Company.findAndCountAll({
+            where: {
+                isApproved: "approved"
+            },
+            attributes: ["id", "name", "logo", "city", "state", "description"],
+            order: [
+                ["createdAt", "DESC"]
+            ],
+            limit: parsedLimit,
+            offset: offset
+        });
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Companies fetched successfully",
+            companies: rows,
+            count: count,
+            page: parsedPage,
+            limit: parsedLimit
         });
     } catch (e) {
         console.error(e);

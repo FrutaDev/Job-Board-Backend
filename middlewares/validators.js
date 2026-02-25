@@ -58,7 +58,7 @@ exports.jobSchema = z.object({
 exports.companySchema = z.object({
     name: z.string().min(4, { message: 'El nombre debe tener al menos 4 caracteres.' })
         .max(100, { message: 'El nombre debe tener menos de 100 caracteres.' })
-        .regex(/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ ]+$/, { message: 'El nombre debe contener solo letras, números y espacios.' })
+        .regex(/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ. ]+$/, { message: 'El nombre debe contener solo letras, números, puntos y espacios.' })
         .transform(name => name.trim()),
     rfc: z.string().min(12, { message: 'El RFC debe tener al menos 12 caracteres.' })
         .max(13, { message: 'El RFC debe tener menos de 13 caracteres.' })

@@ -57,6 +57,15 @@ const Company = sequelize.define("company", {
         allowNull: false,
         defaultValue: "pending"
     },
+    description: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+    },
     userId: {
         type: DataTypes.INTEGER,
         allowNull: false
