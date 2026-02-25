@@ -15,6 +15,7 @@ const PostulatedWork = require("./models/postulatedWorksModel");
 
 const authRoutes = require("./routes/auth");
 const jobsRoutes = require("./routes/jobs");
+const adminRoutes = require("./routes/admin");
 const { setUserId } = require("./middlewares/setUserId");
 const { seedModalities } = require("./models/seeds/seedModalities");
 const { seedTypeOfJob } = require("./models/seeds/seedTypeOfJob");
@@ -37,6 +38,8 @@ app.use(cookieParser());
 app.use("/auth", authRoutes);
 
 app.use(setUserId);
+
+app.use("/admin", adminRoutes);
 
 app.use("/jobs", jobsRoutes);
 
