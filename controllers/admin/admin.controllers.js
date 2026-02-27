@@ -44,7 +44,7 @@ exports.getAllJobForAdminPanelController = async (req, res) => {
 exports.getAllCompaniesForAdminPanelController = async (req, res) => {
     try {
         const companies = await Company.findAll({
-            attributes: ["id", "name", "location", "logo"],
+            attributes: ["id", "name", "country", "state", "city", "logo", "createdAt", "isApproved"],
             order: [
                 ["createdAt", "DESC"]
             ]
@@ -54,6 +54,31 @@ exports.getAllCompaniesForAdminPanelController = async (req, res) => {
             code: "SUCCESS",
             message: "Companies fetched successfully",
             companies: companies
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+}
+
+exports.getCompanyForAdminPanelByIdController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const company = await Company.findOne({
+            where: {
+                id: id
+            },
+            attributes: ["id", "name", "rfc", "country", "state", "city", "contact_email", "contact_phone", "logo", "isApproved", "description", "zip_code", "street", "street_number"]
+        });
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Company fetched successfully",
+            company: company
         });
     } catch (e) {
         console.error(e);
