@@ -263,15 +263,12 @@ exports.getPostulatedWorksController = async (req, res) => {
 
 exports.getPostulatedWorksReceivedController = async (req, res) => {
     try {
-        console.log("👽👽")
         const jobs = await Job.findAll({
             where: {
                 userId: req.userId
             },
             attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
         });
-
-        console.log("👽👽", jobs)
 
         if (jobs.length === 0) {
             return res.status(200).json({
@@ -294,8 +291,6 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
                 }
             ]
         });
-
-        console.log("👽👽", postulatedWorks)
 
         if (postulatedWorks.length === 0) {
             return res.status(200).json({
