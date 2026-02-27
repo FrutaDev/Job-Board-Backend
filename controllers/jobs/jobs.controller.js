@@ -3,6 +3,7 @@ const Job = require("../../models/jobModel.js")
 const Modality = require("../../models/modalityModel.js")
 const TypeOfJob = require("../../models/typeOfJobModel.js")
 const Company = require("../../models/companyModel.js")
+const PostulatedWork = require("../../models/postulatedWorksModel.js")
 
 exports.createJobController = async (req, res) => {
     try {
@@ -75,7 +76,6 @@ exports.getAllJobsController = async (req, res) => {
             limit: parsedLimit,
             offset: offset
         });
-        console.log("rooows", rows)
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
@@ -168,6 +168,173 @@ exports.getJobByIdController = async (req, res) => {
     } catch (e) {
         console.error(e);
         res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.postPostulateToJobController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const job = await Job.findOne({
+            where: {
+                id: id
+            },
+            attributes: ["id"],
+        });
+        if (!job) {
+            return res.status(404).json({
+                ok: false,
+                code: "NOT_FOUND",
+                message: "Job not found"
+            });
+        }
+
+        await PostulatedWork.create({
+            jobId: job.id,
+            userId: req.userId
+        })
+
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Postulated to job successfully",
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.getPostulatedWorksController = async (req, res) => {
+    try {
+        const postulatedWorks = await PostulatedWork.findAll({
+            where: {
+                userId: req.userId
+            },
+            attributes: ["id", "jobId", "userId", "status", "createdAt"],
+            include: [
+                {
+                    model: Job,
+                    attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
+                }
+            ]
+        });
+
+        const finalResponse = await Promise.all(postulatedWorks.map(async postulatedWork => {
+            const company = await Company.findOne({
+                where: {
+                    id: postulatedWork.job.companyId
+                },
+                attributes: ["name"]
+            });
+            return {
+                id: postulatedWork.id,
+                jobId: postulatedWork.jobId,
+                userId: postulatedWork.userId,
+                status: postulatedWork.status,
+                createdAt: postulatedWork.createdAt,
+                job: postulatedWork.job,
+                company: company
+            }
+        }))
+
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Postulated works fetched successfully",
+            postulatedWorks: finalResponse,
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.getPostulatedWorksReceivedController = async (req, res) => {
+    try {
+        console.log("👽👽")
+        const jobs = await Job.findAll({
+            where: {
+                userId: req.userId
+            },
+            attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
+        });
+
+        console.log("👽👽", jobs)
+
+        if (jobs.length === 0) {
+            return res.status(200).json({
+                ok: true,
+                code: "SUCCESS",
+                message: "Jobs not found",
+                postulatedWorks: []
+            });
+        }
+
+        const postulatedWorks = await PostulatedWork.findAll({
+            where: {
+                jobId: jobs.map(job => job.id)
+            },
+            attributes: ["id", "jobId", "userId", "status", "createdAt"],
+            include: [
+                {
+                    model: Job,
+                    attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
+                }
+            ]
+        });
+
+        console.log("👽👽", postulatedWorks)
+
+        if (postulatedWorks.length === 0) {
+            return res.status(200).json({
+                ok: true,
+                code: "SUCCESS",
+                message: "Postulated works not found",
+                postulatedWorks: []
+            });
+        }
+
+        const finalResponse = await Promise.all(postulatedWorks.map(async postulatedWork => {
+            const company = await Company.findOne({
+                where: {
+                    id: postulatedWork.job.companyId
+                },
+                attributes: ["name"]
+            });
+
+
+            return {
+                id: postulatedWork.id,
+                jobId: postulatedWork.jobId,
+                userId: postulatedWork.userId,
+                status: postulatedWork.status,
+                createdAt: postulatedWork.createdAt,
+                job: postulatedWork.job,
+                company: company
+            }
+        }))
+
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Postulated works fetched successfully",
+            postulatedWorks: finalResponse,
+        });
+    } catch (e) {
+        console.error(e)
+        return res.status(500).json({
             ok: false,
             code: "SERVER_ERROR",
             message: "Internal server error"

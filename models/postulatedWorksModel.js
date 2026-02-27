@@ -15,6 +15,15 @@ const PostulatedWork = sequelize.define("postulatedWork", {
     userId: {
         type: DataTypes.INTEGER,
         allowNull: false
+    },
+    coverLetter: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    status: {
+        type: DataTypes.ENUM("pending", "approved", "rejected"),
+        allowNull: false,
+        defaultValue: "pending"
     }
 });
 

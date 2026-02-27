@@ -30,7 +30,10 @@ const User = sequelize.define("user", {
         allowNull: false,
         defaultValue: "user"
     },
-
+    cv: {
+        type: DataTypes.STRING,
+        allowNull: true
+    }
 });
 
 module.exports = User;

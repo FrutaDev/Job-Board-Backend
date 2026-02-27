@@ -1,9 +1,6 @@
 const { signup, login, logout, refresh } = require("../../auth/auth.service");
-const User = require("../../models/userModel");
-const RefreshToken = require("../../models/refreshTokensModel");
-const { generateToken, generateRefreshToken, verifyToken } = require("../../auth/token.service");
-const { hashPassword } = require("../../auth/hash.service");
 require("dotenv").config();
+const User = require("../../models/userModel");
 
 exports.loginController = async (req, res) => {
     try {
@@ -138,3 +135,36 @@ exports.refreshController = async (req, res) => {
     }
 };
 
+exports.updateCVController = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const cv = req.file;
+        if (!userId || !cv) {
+            return res.status(400).json({
+                ok: false,
+                code: "BAD_REQUEST",
+                message: "CV is required"
+            });
+        }
+        const result = await User.update({ cv: cv.filename }, { where: { id: userId } });
+        if (!result) {
+            return res.status(401).json({
+                ok: false,
+                code: "BAD_REQUEST",
+                message: "CV not updated"
+            });
+        }
+        return res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "CV updated successfully"
+        });
+    } catch (error) {
+        console.error("Error updating CV:", error);
+        return res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
