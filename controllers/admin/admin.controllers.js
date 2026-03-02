@@ -93,13 +93,14 @@ exports.getCompanyForAdminPanelByIdController = async (req, res) => {
 exports.postJobIsApprovedController = async (req, res) => {
     try {
         const { id } = req.params;
-        const { isApproved } = req.body;
+        const { status } = req.body;
+        console.log("👽👽", status)
         const job = await Job.findOne({
             where: {
                 id: id
             }
         });
-        job.isApproved = isApproved;
+        job.isApproved = status;
         await job.save();
         res.status(200).json({
             ok: true,
@@ -119,13 +120,13 @@ exports.postJobIsApprovedController = async (req, res) => {
 exports.postCompanyIsApprovedController = async (req, res) => {
     try {
         const { id } = req.params;
-        const { isApproved } = req.body;
+        const { status } = req.body;
         const company = await Company.findOne({
             where: {
                 id: id
             }
         });
-        company.isApproved = isApproved;
+        company.isApproved = status;
         await company.save();
         res.status(200).json({
             ok: true,

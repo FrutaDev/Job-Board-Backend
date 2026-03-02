@@ -9,7 +9,7 @@ exports.authMiddleware = (requiredRoles = []) => {
                 return res.status(401).json({
                     ok: false,
                     code: "UNAUTHORIZED",
-                    message: "No se proporciono un token"
+                    message: "No se proporcionó un token"
                 })
             }
 

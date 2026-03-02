@@ -2,6 +2,7 @@ const Company = require("../../models/companyModel.js");
 const Modality = require("../../models/modalityModel.js");
 const TypeOfJob = require("../../models/typeOfJobModel.js");
 const fs = require("fs");
+const { Op } = require("sequelize");
 
 const genericLocalRFC = "XAXX010101000";
 const genericForeignRFC = "XEXX010101000";
@@ -64,8 +65,12 @@ exports.createCompanyController = async (req, res) => {
 
 exports.getCompaniesController = async (req, res) => {
     try {
+        const { page = 1, limit = 20 } = req.query
+        const parsedPage = Math.max(1, parseInt(page), 1);
+        const parsedLimit = Math.max(1, parseInt(limit), 20);
+        const offset = (parsedPage - 1) * parsedLimit;
         const [companies, modalities, typeOfJobs] = await Promise.all([
-            Company.findAll({ where: { userId: req.userId, isApproved: "approved" }, attributes: ['id', 'name'] }),
+            Company.findAll({ where: { userId: req.userId, isApproved: "approved" }, attributes: ['id', 'name'], limit: parsedLimit, offset: offset }),
             Modality.findAll({ attributes: ['id', 'name'] }),
             TypeOfJob.findAll({ attributes: ['id', 'name'] })
         ]);
@@ -89,20 +94,32 @@ exports.getCompaniesController = async (req, res) => {
 
 exports.getCompaniesForRequestsPage = async (req, res) => {
     try {
-        const companies = await Company.findAll({
+        const { page = 1, limit = 20, search = "" } = req.query
+        const parsedPage = Math.max(1, parseInt(page), 1);
+        const parsedLimit = Math.max(1, parseInt(limit), 20);
+        const offset = (parsedPage - 1) * parsedLimit;
+        const { rows, count } = await Company.findAndCountAll({
             where: {
-                userId: req.userId
+                userId: req.userId,
+                name: {
+                    [Op.like]: `%${search}%`
+                }
             },
             attributes: ["id", "name", "isApproved", "contact_email", "contact_phone", "logo", "createdAt"],
             order: [
                 ["createdAt", "DESC"]
-            ]
+            ],
+            limit: parsedLimit,
+            offset: offset
         });
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
             message: "Companies fetched successfully",
-            companies: companies
+            companies: rows,
+            count: count,
+            page: parsedPage,
+            limit: parsedLimit
         });
     } catch (e) {
         console.error(e);
@@ -116,13 +133,16 @@ exports.getCompaniesForRequestsPage = async (req, res) => {
 
 exports.getCompaniesForMainPageController = async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query
+        const { page = 1, limit = 20, search = "" } = req.query
         const parsedPage = Math.max(1, parseInt(page), 1);
         const parsedLimit = Math.max(1, parseInt(limit), 20);
         const offset = (parsedPage - 1) * parsedLimit;
         const { rows, count } = await Company.findAndCountAll({
             where: {
-                isApproved: "approved"
+                isApproved: "approved",
+                name: {
+                    [Op.like]: `%${search}%`
+                }
             },
             attributes: ["id", "name", "logo", "city", "state", "description"],
             order: [

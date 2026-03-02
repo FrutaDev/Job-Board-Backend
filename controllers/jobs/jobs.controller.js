@@ -4,6 +4,7 @@ const Modality = require("../../models/modalityModel.js")
 const TypeOfJob = require("../../models/typeOfJobModel.js")
 const Company = require("../../models/companyModel.js")
 const PostulatedWork = require("../../models/postulatedWorksModel.js")
+const { Op } = require("sequelize");
 
 exports.createJobController = async (req, res) => {
     try {
@@ -50,13 +51,17 @@ exports.createJobController = async (req, res) => {
 
 exports.getAllJobsController = async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query
+        const { page = 1, limit = 20, search = "" } = req.query
+
         const parsedPage = Math.max(1, parseInt(page), 1);
         const parsedLimit = Math.max(1, parseInt(limit), 20);
         const offset = (parsedPage - 1) * parsedLimit;
         const { rows, count } = await Job.findAndCountAll({
             where: {
-                isApproved: "approved"
+                isApproved: "approved",
+                title: {
+                    [Op.like]: `%${search}%`
+                }
             },
             attributes: ["id", "title", "location", "salary_min", "salary_max"],
             include: [
@@ -97,9 +102,16 @@ exports.getAllJobsController = async (req, res) => {
 
 exports.getJobsForRequestsPage = async (req, res) => {
     try {
-        const jobs = await Job.findAll({
+        const { page = 1, limit = 20, search = "" } = req.query
+        const parsedPage = Math.max(1, parseInt(page), 1);
+        const parsedLimit = Math.max(1, parseInt(limit), 20);
+        const offset = (parsedPage - 1) * parsedLimit;
+        const { rows, count } = await Job.findAndCountAll({
             where: {
-                userId: req.userId
+                userId: req.userId,
+                title: {
+                    [Op.like]: `%${search}%`
+                }
             },
             attributes: ["id", "title", "location", "salary_min", "salary_max", "isApproved", "createdAt"],
             include: [
@@ -118,13 +130,18 @@ exports.getJobsForRequestsPage = async (req, res) => {
             ],
             order: [
                 ["createdAt", "DESC"]
-            ]
+            ],
+            limit: parsedLimit,
+            offset: offset
         });
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
             message: "Jobs fetched successfully",
-            jobs: jobs
+            jobs: rows,
+            count: count,
+            page: parsedPage,
+            limit: parsedLimit
         });
     } catch (e) {
         console.error(e);
@@ -189,6 +206,19 @@ exports.postPostulateToJobController = async (req, res) => {
                 ok: false,
                 code: "NOT_FOUND",
                 message: "Job not found"
+            });
+        }
+        const postulatedWork = await PostulatedWork.findOne({
+            where: {
+                jobId: job.id,
+                userId: req.userId
+            }
+        })
+        if (postulatedWork) {
+            return res.status(400).json({
+                ok: false,
+                code: "BAD_REQUEST",
+                message: "You have already postulated to this job"
             });
         }
 
@@ -263,11 +293,17 @@ exports.getPostulatedWorksController = async (req, res) => {
 
 exports.getPostulatedWorksReceivedController = async (req, res) => {
     try {
+        const { page = 1, limit = 20 } = req.query
+        const parsedPage = Math.max(1, parseInt(page), 1);
+        const parsedLimit = Math.max(1, parseInt(limit), 20);
+        const offset = (parsedPage - 1) * parsedLimit;
         const jobs = await Job.findAll({
             where: {
                 userId: req.userId
             },
-            attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
+            attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"],
+            limit: parsedLimit,
+            offset: offset
         });
 
         if (jobs.length === 0) {
@@ -289,7 +325,9 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
                     model: Job,
                     attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
                 }
-            ]
+            ],
+            limit: parsedLimit,
+            offset: offset
         });
 
         if (postulatedWorks.length === 0) {
