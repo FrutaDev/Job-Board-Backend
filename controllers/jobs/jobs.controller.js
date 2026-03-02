@@ -78,6 +78,9 @@ exports.getAllJobsController = async (req, res) => {
                     attributes: ["name"]
                 }
             ],
+            order: [
+                ["createdAt", "DESC"]
+            ],
             limit: parsedLimit,
             offset: offset
         });
