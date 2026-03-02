@@ -244,9 +244,24 @@ exports.postPostulateToJobController = async (req, res) => {
 
 exports.getPostulatedWorksController = async (req, res) => {
     try {
-        const postulatedWorks = await PostulatedWork.findAll({
+        const { page = 1, limit = 20, search = "" } = req.query
+        const parsedPage = Math.max(1, parseInt(page), 1);
+        const parsedLimit = Math.max(1, parseInt(limit), 20);
+        const offset = (parsedPage - 1) * parsedLimit;
+        const job = await Job.findAll({
             where: {
-                userId: req.userId
+                title: {
+                    [Op.like]: `%${search}%`
+                }
+            },
+            attributes: ["id"]
+        })
+        const { rows, count } = await PostulatedWork.findAndCountAll({
+            where: {
+                userId: req.userId,
+                jobId: {
+                    [Op.in]: job.map(job => job.id)
+                }
             },
             attributes: ["id", "jobId", "userId", "status", "createdAt"],
             include: [
@@ -254,10 +269,12 @@ exports.getPostulatedWorksController = async (req, res) => {
                     model: Job,
                     attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
                 }
-            ]
+            ],
+            limit: parsedLimit,
+            offset: offset
         });
 
-        const finalResponse = await Promise.all(postulatedWorks.map(async postulatedWork => {
+        const finalResponse = await Promise.all(rows.map(async postulatedWork => {
             const company = await Company.findOne({
                 where: {
                     id: postulatedWork.job.companyId
@@ -280,6 +297,7 @@ exports.getPostulatedWorksController = async (req, res) => {
             code: "SUCCESS",
             message: "Postulated works fetched successfully",
             postulatedWorks: finalResponse,
+            count: count
         });
     } catch (e) {
         console.error(e);
@@ -293,20 +311,32 @@ exports.getPostulatedWorksController = async (req, res) => {
 
 exports.getPostulatedWorksReceivedController = async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query
+        const { page = 1, limit = 20, search = "" } = req.query
         const parsedPage = Math.max(1, parseInt(page), 1);
         const parsedLimit = Math.max(1, parseInt(limit), 20);
         const offset = (parsedPage - 1) * parsedLimit;
-        const jobs = await Job.findAll({
+        const job = await Job.findAll({
             where: {
-                userId: req.userId
+                userId: req.userId,
+                title: {
+                    [Op.like]: `%${search}%`
+                }
+            },
+            attributes: ["id"]
+        })
+        const { rows, count } = await Job.findAndCountAll({
+            where: {
+                userId: req.userId,
+                id: {
+                    [Op.in]: job.map(job => job.id)
+                }
             },
             attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"],
             limit: parsedLimit,
             offset: offset
         });
 
-        if (jobs.length === 0) {
+        if (rows.length === 0) {
             return res.status(200).json({
                 ok: true,
                 code: "SUCCESS",
@@ -317,7 +347,7 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
 
         const postulatedWorks = await PostulatedWork.findAll({
             where: {
-                jobId: jobs.map(job => job.id)
+                jobId: rows.map(job => job.id)
             },
             attributes: ["id", "jobId", "userId", "status", "createdAt"],
             include: [
@@ -355,7 +385,7 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
                 status: postulatedWork.status,
                 createdAt: postulatedWork.createdAt,
                 job: postulatedWork.job,
-                company: company
+                company: company,
             }
         }))
 
@@ -364,6 +394,7 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
             code: "SUCCESS",
             message: "Postulated works fetched successfully",
             postulatedWorks: finalResponse,
+            count: count
         });
     } catch (e) {
         console.error(e)
