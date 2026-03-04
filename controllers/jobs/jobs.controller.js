@@ -5,6 +5,8 @@ const TypeOfJob = require("../../models/typeOfJobModel.js")
 const Company = require("../../models/companyModel.js")
 const PostulatedWork = require("../../models/postulatedWorksModel.js")
 const { Op } = require("sequelize");
+const User = require("../../models/userModel.js");
+const { getIO } = require("../../src/socket/socket");
 
 exports.createJobController = async (req, res) => {
     try {
@@ -318,21 +320,10 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
         const parsedPage = Math.max(1, parseInt(page), 1);
         const parsedLimit = Math.max(1, parseInt(limit), 20);
         const offset = (parsedPage - 1) * parsedLimit;
-        const job = await Job.findAll({
-            where: {
-                userId: req.userId,
-                title: {
-                    [Op.like]: `%${search}%`
-                }
-            },
-            attributes: ["id"]
-        })
+
         const { rows, count } = await Job.findAndCountAll({
             where: {
                 userId: req.userId,
-                id: {
-                    [Op.in]: job.map(job => job.id)
-                }
             },
             attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"],
             limit: parsedLimit,
@@ -356,7 +347,11 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
             include: [
                 {
                     model: Job,
-                    attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"]
+                    attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"],
+                },
+                {
+                    model: User,
+                    attributes: ["id", "name", "lastName", "email", "cv"],
                 }
             ],
             limit: parsedLimit,
@@ -388,6 +383,7 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
                 status: postulatedWork.status,
                 createdAt: postulatedWork.createdAt,
                 job: postulatedWork.job,
+                user: postulatedWork.user,
                 company: company,
             }
         }))
@@ -398,6 +394,43 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
             message: "Postulated works fetched successfully",
             postulatedWorks: finalResponse,
             count: count
+        });
+    } catch (e) {
+        console.error(e)
+        return res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.updatePostulatedJobStatusController = async (req, res) => {
+    try {
+        const { postulateId, status } = req.body.data;
+        if (!postulateId || !status) {
+            return res.status(400).json({
+                ok: false,
+                code: "BAD_REQUEST",
+                message: "Postulate id and status are required"
+            });
+        }
+        const postulatedWork = await PostulatedWork.findByPk(postulateId)
+        if (!postulatedWork) {
+            return res.status(404).json({
+                ok: false,
+                code: "NOT_FOUND",
+                message: "Postulated work not found"
+            });
+        }
+
+        postulatedWork.status = status;
+        await postulatedWork.save();
+
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Postulated work status updated successfully",
         });
     } catch (e) {
         console.error(e)

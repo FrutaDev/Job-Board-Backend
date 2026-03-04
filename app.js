@@ -1,5 +1,4 @@
 const express = require("express");
-require("dotenv").config();
 
 const sequelize = require("./src/utils/database");
 const cors = require("cors");
@@ -16,9 +15,14 @@ const PostulatedWork = require("./models/postulatedWorksModel");
 const authRoutes = require("./routes/auth");
 const jobsRoutes = require("./routes/jobs");
 const adminRoutes = require("./routes/admin");
+const cvRoutes = require("./routes/cv");
 const { setUserId } = require("./middlewares/setUserId");
 const { seedModalities } = require("./models/seeds/seedModalities");
 const { seedTypeOfJob } = require("./models/seeds/seedTypeOfJob");
+const http = require("http");
+const app = express();
+const server = http.createServer(app);
+const { initSocket } = require("./src/socket/socket");
 
 const corsOptions = {
     origin: "http://localhost:5173",
@@ -27,7 +31,6 @@ const corsOptions = {
     allowedHeaders: ["Content-Type", "Authorization"]
 }
 
-const app = express();
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -43,7 +46,11 @@ app.use("/admin", adminRoutes);
 
 app.use("/jobs", jobsRoutes);
 
+app.use("/cv", cvRoutes);
+
 app.use('/uploads', express.static('uploads'));
+
+initSocket(server);
 
 app.get("/", (req, res) => {
     res.status(201).json({ message: "Hello World!" });
@@ -87,7 +94,7 @@ sequelize
         console.log("Database synchronized");
         await seedModalities();
         await seedTypeOfJob();
-        app.listen(3000, () => {
+        server.listen(3000, () => {
             console.log("Server is running on address http://127.0.0.1:3000/");
         });
     })

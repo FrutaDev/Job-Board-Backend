@@ -61,8 +61,7 @@ exports.signupController = async (req, res) => {
                 secure: false,
                 sameSite: "lax",
                 maxAge: 24 * 60 * 60 * 1000
-            }
-            )
+            })
             .json({
                 ok: true,
                 code: "SUCCESS",

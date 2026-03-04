@@ -7,8 +7,8 @@ const createStorage = (folder) =>
             cb(null, `uploads/${folder}/`);
         },
         filename: function (req, file, cb) {
-            const uniqueSuffix =
-                Date.now() + '-' + Math.round(Math.random() * 1E9);
+            console.log("upload file", file);
+            const uniqueSuffix = file.originalname.split(".")[0] + '-' + Date.now() + '-' + Math.round(Math.random() * 1E9);
             cb(null, uniqueSuffix + path.extname(file.originalname));
         }
     });
