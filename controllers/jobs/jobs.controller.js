@@ -549,6 +549,7 @@ exports.getPostulateReceivedByIdController = async (req, res) => {
                 }
             ]
         });
+        console.log("👽👽 postulated wooork", postulatedWork)
         if (!postulatedWork) {
             return res.status(404).json({
                 ok: false,

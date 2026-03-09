@@ -2,8 +2,9 @@ const Job = require("../../models/jobModel")
 const Modality = require("../../models/modalityModel")
 const TypeOfJob = require("../../models/typeOfJobModel")
 const Company = require("../../models/companyModel")
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const { getIO } = require("../../src/socket/socket");
+const { includes } = require("zod");
 
 exports.getAllJobForAdminPanelController = async (req, res) => {
     try {
@@ -123,17 +124,38 @@ exports.postJobIsApprovedController = async (req, res) => {
         const job = await Job.findOne({
             where: {
                 id: id
-            }
+            }, attributes: ["id", "title", "location", "salary_min", "salary_max", "createdAt"],
+            include: [
+                {
+                    model: Modality,
+                    attributes: ["name"]
+                },
+                {
+                    model: TypeOfJob,
+                    attributes: ["name"]
+                },
+                {
+                    model: Company,
+                    attributes: ["name"]
+                }
+            ]
         });
         job.isApproved = status;
 
-        const newJob = await job.save();
+        await job.save();
 
-        console.log("status", status)
         if (status === "approved") {
             const io = getIO()
-            console.log("emitiendo el socket")
-            io.emit("new-job", newJob)
+            io.emit("new-job", {
+                id: job.id,
+                company: job.company,
+                location: job.location,
+                modality: job.modality,
+                salary_min: job.salary_min,
+                salary_max: job.salary_max,
+                title: job.title,
+                typeOfJob: job.typeOfJob,
+            })
         }
         res.status(200).json({
             ok: true,
