@@ -19,6 +19,8 @@ const cvRoutes = require("./routes/cv");
 const { setUserId } = require("./middlewares/setUserId");
 const { seedModalities } = require("./models/seeds/seedModalities");
 const { seedTypeOfJob } = require("./models/seeds/seedTypeOfJob");
+const { seedCompanies } = require("./models/seeds/seedCompanies")
+const { seedJobs } = require("./models/seeds/seedJobs")
 const http = require("http");
 const app = express();
 const server = http.createServer(app);
@@ -94,6 +96,9 @@ sequelize
         console.log("Database synchronized");
         await seedModalities();
         await seedTypeOfJob();
+        await seedCompanies();
+        await seedJobs();
+
         server.listen(3000, () => {
             console.log("Server is running on address http://127.0.0.1:3000/");
         });

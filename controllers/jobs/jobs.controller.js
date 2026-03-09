@@ -8,6 +8,7 @@ const { Op } = require("sequelize");
 const User = require("../../models/userModel.js");
 const { getIO } = require("../../src/socket/socket");
 
+
 exports.createJobController = async (req, res) => {
     try {
         const { title, companyId, location, salary_min, salary_max, modalityId, typeOfJobId, description_html, responsabilities_html, requirements_html, benefits_html } = req.body;
@@ -227,10 +228,14 @@ exports.postPostulateToJobController = async (req, res) => {
             });
         }
 
-        await PostulatedWork.create({
+        const newPostulatedWork = await PostulatedWork.create({
             jobId: job.id,
             userId: req.userId
         })
+
+        const io = getIO();
+
+        io.to(`module:postulates`).emit("new-postulate", newPostulatedWork);
 
         res.status(200).json({
             ok: true,
@@ -323,11 +328,12 @@ exports.getPostulatedWorksReceivedController = async (req, res) => {
 
         const { rows, count } = await Job.findAndCountAll({
             where: {
+                title: {
+                    [Op.like]: `%${search}%`
+                },
                 userId: req.userId,
             },
             attributes: ["id", "title", "location", "salary_min", "salary_max", "companyId"],
-            limit: parsedLimit,
-            offset: offset
         });
 
         if (rows.length === 0) {
@@ -427,10 +433,134 @@ exports.updatePostulatedJobStatusController = async (req, res) => {
         postulatedWork.status = status;
         await postulatedWork.save();
 
+        const io = getIO();
+
+        io.to(`module:postulates`).emit("update-postulate", {
+            postulateId: postulateId,
+            status: status
+        });
+
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
             message: "Postulated work status updated successfully",
+        });
+    } catch (e) {
+        console.error(e)
+        return res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.getPostulateByIdController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const postulatedWork = await PostulatedWork.findOne({
+            where: {
+                id: id,
+                userId: req.userId
+            },
+            include: [
+                {
+                    model: Job,
+                    attributes: ["id", "title", "location", "salary_min", "salary_max"],
+                    include: [
+                        {
+                            model: Modality,
+                            attributes: ["name"]
+                        },
+                        {
+                            model: TypeOfJob,
+                            attributes: ["name"]
+                        },
+                        {
+                            model: Company,
+                            attributes: ["name"]
+                        }
+                    ]
+                },
+                {
+                    model: User,
+                    attributes: ["id", "name", "email"]
+                }
+            ]
+        });
+        if (!postulatedWork) {
+            return res.status(404).json({
+                ok: false,
+                code: "NOT_FOUND",
+                message: "Postulated work not found"
+            });
+        }
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Postulated work fetched successfully",
+            postulatedWork: postulatedWork
+        });
+    } catch (e) {
+        console.error(e)
+        return res.status(500).json({
+            ok: false,
+            code: "SERVER_ERROR",
+            message: "Internal server error"
+        });
+    }
+};
+
+exports.getPostulateReceivedByIdController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const jobs = await Job.findAll({
+            where: {
+                userId: req.userId
+            },
+        });
+        const postulatedWork = await PostulatedWork.findOne({
+            where: {
+                jobId: jobs.map(job => job.id),
+                id: id,
+            },
+            include: [
+                {
+                    model: Job,
+                    attributes: ["id", "title", "location", "salary_min", "salary_max"],
+                    include: [
+                        {
+                            model: Modality,
+                            attributes: ["name"]
+                        },
+                        {
+                            model: TypeOfJob,
+                            attributes: ["name"]
+                        },
+                        {
+                            model: Company,
+                            attributes: ["name"]
+                        }
+                    ]
+                },
+                {
+                    model: User,
+                    attributes: ["id", "name", "email"]
+                }
+            ]
+        });
+        if (!postulatedWork) {
+            return res.status(404).json({
+                ok: false,
+                code: "NOT_FOUND",
+                message: "Postulated work not found"
+            });
+        }
+        res.status(200).json({
+            ok: true,
+            code: "SUCCESS",
+            message: "Postulated work fetched successfully",
+            postulatedWork: postulatedWork
         });
     } catch (e) {
         console.error(e)

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createJobController, getAllJobsController, getJobsForRequestsPage, getJobByIdController, postPostulateToJobController, getPostulatedWorksController, getPostulatedWorksReceivedController, updatePostulatedJobStatusController } = require("../controllers/jobs/jobs.controller");
+const { createJobController, getAllJobsController, getJobsForRequestsPage, getJobByIdController, postPostulateToJobController, getPostulatedWorksController, getPostulatedWorksReceivedController, updatePostulatedJobStatusController, getPostulateByIdController, getPostulateReceivedByIdController } = require("../controllers/jobs/jobs.controller");
 const { createCompanyController, getCompaniesController, getCompaniesForRequestsPage, getCompaniesForMainPageController } = require("../controllers/jobs/companies.controller");
 const { authMiddleware } = require("../middlewares/auth.middleware");
 const { validate } = require("../middlewares/validators");
@@ -19,6 +19,8 @@ router.post("/create-company", authMiddleware(["admin", "user"]), uploadLogo.sin
 router.get("/postulates", authMiddleware(["user", "admin"]), getPostulatedWorksController)
 router.get("/postulates-received", authMiddleware(["admin", "user"]), getPostulatedWorksReceivedController)
 router.put("/postulate/", authMiddleware(["admin", "user"]), updatePostulatedJobStatusController)
+router.get("/postulate-received/:id", authMiddleware(["admin", "user"]), getPostulateReceivedByIdController)
+router.get("/postulate/:id", authMiddleware(["admin", "user"]), getPostulateByIdController)
 router.get("/:id", authMiddleware(["admin", "user"]), getJobByIdController);
 router.post("/:id/postulate", authMiddleware(["user"]), postPostulateToJobController);
 

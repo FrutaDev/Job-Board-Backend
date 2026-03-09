@@ -1,7 +1,12 @@
 module.exports = (io, socket) => {
 
+    socket.onAny((event, ...args) => {
+        console.log("👽👽👽 Event:", event, args);
+        console.log("📞📞📞 Rooms:", socket.rooms);
+    });
+
     socket.on("join-module", (module) => {
-        console.log("User joined module 👽👽", module);
+        console.log("User joined module 👽👽", `module:${module}`);
         const room = `module:${module}`;
         socket.join(room);
     })
