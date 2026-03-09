@@ -62,6 +62,9 @@ exports.getAllJobsController = async (req, res) => {
         const { rows, count } = await Job.findAndCountAll({
             where: {
                 isApproved: "approved",
+                userId: {
+                    [Op.ne]: req.userId
+                },
                 title: {
                     [Op.like]: `%${search}%`
                 }
