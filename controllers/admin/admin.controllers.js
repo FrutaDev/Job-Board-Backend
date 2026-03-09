@@ -144,19 +144,30 @@ exports.postJobIsApprovedController = async (req, res) => {
 
         await job.save();
 
-        if (status === "approved") {
-            const io = getIO()
-            io.emit("new-job", {
-                id: job.id,
-                company: job.company,
-                location: job.location,
-                modality: job.modality,
-                salary_min: job.salary_min,
-                salary_max: job.salary_max,
-                title: job.title,
-                typeOfJob: job.typeOfJob,
-            })
-        }
+        const io = getIO()
+        io.to("module:admin-jobs").emit("update-job", {
+            id: job.id,
+            company: job.company,
+            location: job.location,
+            modality: job.modality,
+            salary_min: job.salary_min,
+            salary_max: job.salary_max,
+            title: job.title,
+            typeOfJob: job.typeOfJob,
+            isApproved: job.isApproved
+        })
+
+        io.emit("new-job", {
+            id: job.id,
+            company: job.company,
+            location: job.location,
+            modality: job.modality,
+            salary_min: job.salary_min,
+            salary_max: job.salary_max,
+            title: job.title,
+            typeOfJob: job.typeOfJob,
+            status: status
+        })
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
@@ -181,8 +192,17 @@ exports.postCompanyIsApprovedController = async (req, res) => {
                 id: id
             }
         });
+
         company.isApproved = status;
+
         await company.save();
+
+        const io = getIO()
+        io.emit("update-company", {
+            company: company,
+            status: status
+        })
+
         res.status(200).json({
             ok: true,
             code: "SUCCESS",
